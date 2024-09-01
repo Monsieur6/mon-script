@@ -2,11 +2,11 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
 local Gui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
 local Frame = Instance.new("Frame", Gui)
 local FarmButton = Instance.new("TextButton", Frame)
 local AutoFarmEnabled = false
-local AutoFarmToggle = Instance.new("TextButton", Frame)
 local Dragging = false
 local DragInput, MousePos, FramePos
 
@@ -18,22 +18,12 @@ Frame.BorderSizePixel = 0
 
 FarmButton.Size = UDim2.new(1, 0, 0.5, 0)
 FarmButton.Position = UDim2.new(0, 0, 0, 0)
-FarmButton.Text = "Farm"
+FarmButton.Text = "Start Farming"
 FarmButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 FarmButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 FarmButton.MouseButton1Click:Connect(function()
     AutoFarmEnabled = not AutoFarmEnabled
     FarmButton.Text = AutoFarmEnabled and "Stop Farming" or "Start Farming"
-end)
-
-AutoFarmToggle.Size = UDim2.new(1, 0, 0.5, 0)
-AutoFarmToggle.Position = UDim2.new(0, 0, 0.5, 0)
-AutoFarmToggle.Text = "Toggle Auto-Farm"
-AutoFarmToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-AutoFarmToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-AutoFarmToggle.MouseButton1Click:Connect(function()
-    AutoFarmEnabled = not AutoFarmEnabled
-    AutoFarmToggle.Text = AutoFarmEnabled and "Auto-Farm Enabled" or "Auto-Farm Disabled"
 end)
 
 -- Dragging function
@@ -72,24 +62,27 @@ Frame.InputEnded:Connect(function(input)
     end
 end)
 
--- Auto-Farming Loop
+-- Function to get the player's plot
 local function getPlot()
     local plot = nil
     for i, v in next, workspace.Plots:GetChildren() do
-        if v:WaitForChild("Owner").Value == LocalPlayer or v:WaitForChild("Owner").Value == LocalPlayer.Character then
+        local owner = v:FindFirstChild("Owner")
+        if owner and (owner.Value == LocalPlayer or owner.Value == LocalPlayer.Character) then
             plot = v
+            break
         end
     end
     return plot
 end
 
+-- Function to get a random tree from the plot
 local function getRandomTree(plot)
     local randomTree = nil
     local branch = nil
-    for a, x in next, plot:GetChildren() do
+    for _, x in next, plot:GetChildren() do
         if x:IsA("Model") then
-            for l, d in next, x:GetChildren() do
-                if string.find(d.Name, "Tree") then
+            for _, d in next, x:GetChildren() do
+                if d:IsA("Model") and string.find(d.Name, "Tree") then
                     randomTree = d
                     branch = x
                     break
@@ -100,14 +93,25 @@ local function getRandomTree(plot)
     return randomTree, branch
 end
 
+-- Auto-Farming Loop
 while true do
     wait(1)
     if AutoFarmEnabled then
         local plot = getPlot()
-        local choice, branch = getRandomTree(getPlot())
-        if choice and branch then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(choice:WaitForChild("Base").Position + Vector3.new(2, 0, 0))
-            game:GetService("ReplicatedStorage").Communication.Remotes.HitTree:FireServer(plot.Name, tostring(branch), string.gsub(choice.Name, "Tree_", ""))
+        local tree, branch = getRandomTree(plot)
+        if tree and branch then
+            -- Position the player near the tree
+            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(tree:FindFirstChild("Base").Position + Vector3.new(2, 0, 0))
+            
+            -- Simulate the click to chop the tree
+            Mouse.Hit = tree:FindFirstChild("Base").CFrame
+            Mouse.Button1Down:Fire()
+            
+            -- Simulate a slight delay before moving to another tree
+            wait(2)
+            
+            -- Move to another tree
+            Mouse.Hit = CFrame.new(tree:FindFirstChild("Base").Position + Vector3.new(10, 0, 0))
         end
     end
 end
