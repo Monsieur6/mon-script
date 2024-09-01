@@ -1,58 +1,113 @@
--- Création du GUI
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local TweenService = game:GetService("TweenService")
+local Gui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
+local Frame = Instance.new("Frame", Gui)
+local FarmButton = Instance.new("TextButton", Frame)
+local AutoFarmEnabled = false
+local AutoFarmToggle = Instance.new("TextButton", Frame)
+local Dragging = false
+local DragInput, MousePos, FramePos
 
-local function createMenu()
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "TestMenu"
-    screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+-- Settings for UI elements
+Frame.Size = UDim2.new(0, 200, 0, 300)
+Frame.Position = UDim2.new(0, 50, 0, 50)
+Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Frame.BorderSizePixel = 0
 
-    local menuFrame = Instance.new("Frame")
-    menuFrame.Name = "MenuFrame"
-    menuFrame.Size = UDim2.new(0, 300, 0, 200)
-    menuFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
-    menuFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    menuFrame.Parent = screenGui
+FarmButton.Size = UDim2.new(1, 0, 0.5, 0)
+FarmButton.Position = UDim2.new(0, 0, 0, 0)
+FarmButton.Text = "Farm"
+FarmButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+FarmButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+FarmButton.MouseButton1Click:Connect(function()
+    AutoFarmEnabled = not AutoFarmEnabled
+    FarmButton.Text = AutoFarmEnabled and "Stop Farming" or "Start Farming"
+end)
 
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Size = UDim2.new(1, 0, 0.2, 0)
-    titleLabel.Position = UDim2.new(0, 0, 0, 0)
-    titleLabel.Text = "Menu Test"
-    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    titleLabel.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-    titleLabel.Parent = menuFrame
+AutoFarmToggle.Size = UDim2.new(1, 0, 0.5, 0)
+AutoFarmToggle.Position = UDim2.new(0, 0, 0.5, 0)
+AutoFarmToggle.Text = "Toggle Auto-Farm"
+AutoFarmToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+AutoFarmToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+AutoFarmToggle.MouseButton1Click:Connect(function()
+    AutoFarmEnabled = not AutoFarmEnabled
+    AutoFarmToggle.Text = AutoFarmEnabled and "Auto-Farm Enabled" or "Auto-Farm Disabled"
+end)
 
-    local activateButton = Instance.new("TextButton")
-    activateButton.Size = UDim2.new(0.8, 0, 0.3, 0)
-    activateButton.Position = UDim2.new(0.1, 0, 0.3, 0)
-    activateButton.Text = "Activer"
-    activateButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
-    activateButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    activateButton.Parent = menuFrame
-
-    local deactivateButton = Instance.new("TextButton")
-    deactivateButton.Size = UDim2.new(0.8, 0, 0.3, 0)
-    deactivateButton.Position = UDim2.new(0.1, 0, 0.6, 0)
-    deactivateButton.Text = "Désactiver"
-    deactivateButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-    deactivateButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    deactivateButton.Parent = menuFrame
-
-    -- Fonction pour activer le script
-    local function activateScript()
-        print("Script activé")
-        -- Ajouter le code d'activation ici
-    end
-
-    -- Fonction pour désactiver le script
-    local function deactivateScript()
-        print("Script désactivé")
-        -- Ajouter le code de désactivation ici
-    end
-
-    activateButton.MouseButton1Click:Connect(activateScript)
-    deactivateButton.MouseButton1Click:Connect(deactivateScript)
+-- Dragging function
+local function startDrag(input)
+    Dragging = true
+    MousePos = input.Position
+    FramePos = Frame.Position
 end
 
-createMenu()
+local function updateDrag(input)
+    if Dragging then
+        local Delta = input.Position - MousePos
+        Frame.Position = UDim2.new(FramePos.X.Scale, FramePos.X.Offset + Delta.X, FramePos.Y.Scale, FramePos.Y.Offset + Delta.Y)
+    end
+end
+
+local function stopDrag()
+    Dragging = false
+end
+
+Frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        startDrag(input)
+    end
+end)
+
+Frame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        updateDrag(input)
+    end
+end)
+
+Frame.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        stopDrag()
+    end
+end)
+
+-- Auto-Farming Loop
+local function getPlot()
+    local plot = nil
+    for i, v in next, workspace.Plots:GetChildren() do
+        if v:WaitForChild("Owner").Value == LocalPlayer or v:WaitForChild("Owner").Value == LocalPlayer.Character then
+            plot = v
+        end
+    end
+    return plot
+end
+
+local function getRandomTree(plot)
+    local randomTree = nil
+    local branch = nil
+    for a, x in next, plot:GetChildren() do
+        if x:IsA("Model") then
+            for l, d in next, x:GetChildren() do
+                if string.find(d.Name, "Tree") then
+                    randomTree = d
+                    branch = x
+                    break
+                end
+            end
+        end
+    end
+    return randomTree, branch
+end
+
+while true do
+    wait(1)
+    if AutoFarmEnabled then
+        local plot = getPlot()
+        local choice, branch = getRandomTree(getPlot())
+        if choice and branch then
+            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(choice:WaitForChild("Base").Position + Vector3.new(2, 0, 0))
+            game:GetService("ReplicatedStorage").Communication.Remotes.HitTree:FireServer(plot.Name, tostring(branch), string.gsub(choice.Name, "Tree_", ""))
+        end
+    end
+end
