@@ -1,0 +1,58 @@
+-- Création du GUI
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+
+local function createMenu()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "TestMenu"
+    screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+    local menuFrame = Instance.new("Frame")
+    menuFrame.Name = "MenuFrame"
+    menuFrame.Size = UDim2.new(0, 300, 0, 200)
+    menuFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
+    menuFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    menuFrame.Parent = screenGui
+
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(1, 0, 0.2, 0)
+    titleLabel.Position = UDim2.new(0, 0, 0, 0)
+    titleLabel.Text = "Menu Test"
+    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleLabel.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    titleLabel.Parent = menuFrame
+
+    local activateButton = Instance.new("TextButton")
+    activateButton.Size = UDim2.new(0.8, 0, 0.3, 0)
+    activateButton.Position = UDim2.new(0.1, 0, 0.3, 0)
+    activateButton.Text = "Activer"
+    activateButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+    activateButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    activateButton.Parent = menuFrame
+
+    local deactivateButton = Instance.new("TextButton")
+    deactivateButton.Size = UDim2.new(0.8, 0, 0.3, 0)
+    deactivateButton.Position = UDim2.new(0.1, 0, 0.6, 0)
+    deactivateButton.Text = "Désactiver"
+    deactivateButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+    deactivateButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    deactivateButton.Parent = menuFrame
+
+    -- Fonction pour activer le script
+    local function activateScript()
+        print("Script activé")
+        -- Ajouter le code d'activation ici
+    end
+
+    -- Fonction pour désactiver le script
+    local function deactivateScript()
+        print("Script désactivé")
+        -- Ajouter le code de désactivation ici
+    end
+
+    activateButton.MouseButton1Click:Connect(activateScript)
+    deactivateButton.MouseButton1Click:Connect(deactivateScript)
+end
+
+createMenu()
